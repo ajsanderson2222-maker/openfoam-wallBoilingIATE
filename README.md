@@ -122,6 +122,14 @@ Sub-models used:
 
 ## Results
 
+### Void Fraction Evolution
+
+**Gas void fraction α_gas building up along the heated wall (t = 1 – 4 s):**
+![Alpha animation](alpha_animation.gif)
+
+The near-wall vapour layer grows axially from the inlet as the liquid absorbs
+heat and nucleation intensifies. By t ≈ 2 s the distribution is stationary.
+
 ### Axial–Radial Field Distributions
 
 **Gas void fraction, liquid temperature, and bubble diameter at t = 4 s:**
