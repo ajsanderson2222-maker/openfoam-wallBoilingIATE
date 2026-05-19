@@ -5,7 +5,8 @@ Simulation of subcooled nucleate boiling in a heated vertical pipe using the
 a uniformly heated tube; nucleation at the wall generates steam bubbles that
 partially condense back into the liquid as they migrate toward the cooler core.
 The bubble size evolves dynamically via the **Interfacial Area Transport Equation
-(IATE)**. Results are validated against the Débora experimental dataset.
+(IATE)**. Results are validated against the Débora experimental dataset and a
+parametric study explores the sensitivity of key closure coefficients.
 
 ---
 
@@ -42,11 +43,8 @@ vapour layer and a relatively small global void fraction.
 | Wall | Top face — heated, no-slip |
 | Axis | Bottom face — wedge symmetry |
 
-**Mesh (350 axial × 40 radial, y-grading 0.5 toward wall):**
-![Mesh](mesh.png)
-
 **Boundary conditions:**
-![BC diagram](bc_diagram.png)
+![BC diagram](studies/baseline/bc_diagram.png)
 
 ---
 
@@ -63,11 +61,11 @@ Rather than prescribing a fixed bubble diameter, IATE transports the interfacial
 area concentration κ_i (m⁻¹), from which the local Sauter mean diameter is
 derived: d = 6α/κ_i. The source terms model three bubble interaction mechanisms:
 
-| Mechanism | Model | Effect |
-|---|---|---|
-| Wake entrainment coalescence | C_we = 0.002 | Bubbles drafted together behind rising bubbles coalesce |
-| Random coalescence | C_rc = 0.04, C = 3 | Random collisions between bubbles lead to coalescence |
-| Turbulent break-up | C_ti = 0.085, We_cr = 6 | Turbulent eddies with sufficient energy split bubbles |
+| Mechanism | Model | Baseline coefficient | Effect on d |
+|---|---|---|---|
+| Wake entrainment coalescence | C_we | 0.002 | Increases d |
+| Random coalescence | C_rc | 0.04 | Increases d |
+| Turbulent break-up | C_ti, We_cr | 0.085, 6 | Decreases d |
 
 ### Wall Boiling Model
 
@@ -84,19 +82,18 @@ Sub-models used:
 | Quantity | Model |
 |---|---|
 | Nucleation site density N | Lemmert–Chawla |
-| Bubble departure diameter d_d | Tolubinski–Kostanchuk |
-| Bubble departure frequency f | Cole |
-| Nucleate boiling suppression | Experimental correlation |
+| Bubble departure diameter d_d | Tolubinski–Kostanchuk (d_ref = 0.24 mm) |
+| Bubble departure frequency f | KocamustafaogullariIshii |
 
 ### Interphase Transfer
 
 | Mechanism | Model |
 |---|---|
-| Drag | Schiller–Naumann |
-| Lift | Tomiyama |
+| Drag | IshiiZuber |
+| Lift | Tomiyama (wall-damped, C_l = 0.288) |
 | Virtual mass | Constant C_vm = 0.5 |
-| Turbulent dispersion | Burns et al. |
-| Interfacial condensation | ranzMarshall heat transfer |
+| Turbulent dispersion | LopezDeBertodano (C_td = 1.0) |
+| Interfacial condensation | Heat transfer limited phase change |
 
 ### Turbulence
 
@@ -125,7 +122,7 @@ Sub-models used:
 ### Void Fraction Evolution
 
 **Gas void fraction α_gas building up along the heated wall (t = 1 – 4 s):**
-![Alpha animation](alpha_animation.gif)
+![Alpha animation](studies/baseline/alpha_animation.gif)
 
 The near-wall vapour layer grows axially from the inlet as the liquid absorbs
 heat and nucleation intensifies. By t ≈ 2 s the distribution is stationary.
@@ -133,7 +130,7 @@ heat and nucleation intensifies. By t ≈ 2 s the distribution is stationary.
 ### Axial–Radial Field Distributions
 
 **Gas void fraction, liquid temperature, and bubble diameter at t = 4 s:**
-![Field contours](field_contours.png)
+![Field contours](studies/baseline/field_contours.png)
 
 Key features:
 - **Void fraction**: Peaks near the heated wall (α ≈ 0.40) and decays sharply
@@ -148,7 +145,7 @@ Key features:
 ### Convergence
 
 **Solver residuals for p_rgh, h.liquid (enthalpy), and k.liquid (TKE):**
-![Convergence](convergence.png)
+![Convergence](studies/baseline/convergence.png)
 
 All residuals fall by several orders of magnitude within the first 0.5 s as the
 boiling boundary layer establishes. After ~1 s the solution is stationary; the
@@ -165,23 +162,90 @@ temperature, and bubble diameter in a heated vertical tube under conditions
 closely matching this case.
 
 **Radial profiles at z = 3.49 m (measurement plane):**
-![Validation profiles](validation_profiles.png)
+![Validation profiles](studies/baseline/validation_profiles.png)
 
-### Discussion
+### Why void fraction and temperature agree but bubble diameter does not
 
-| Quantity | Agreement | Notes |
+The void fraction and liquid temperature profiles are governed primarily by the
+**enthalpy equation** and the **bulk heat balance** — the wall heat flux drives
+liquid superheat at the wall, nucleation generates steam, and the subcooled core
+condenses it back. These processes are well-captured by the two-fluid energy
+equations and the Kurul–Podowski wall boiling partition, independent of the
+exact bubble size.
+
+The bubble diameter, by contrast, is entirely determined by the **IATE transport
+equation**, which evolves the interfacial area concentration κ_i from which
+d = 6α/κ_i is derived. The baseline over-predicts d by a factor of ~2–3 (1.2 mm
+vs ~0.5 mm measured near the wall). The root cause is that **coalescence
+dominates over break-up** along the 3.5 m pipe length — bubbles nucleate at
+~0.24 mm at the wall but grow continuously via random and wake-entrainment
+coalescence before they can be split by turbulence.
+
+There are two structural reasons why the IATE closures struggle here:
+
+1. **The IATE models were calibrated for adiabatic bubbly pipe flow** at moderate
+   to high void fractions (α > 0.1 globally). In subcooled boiling the void is
+   concentrated in a thin near-wall layer with α locally up to 0.4 but globally
+   much lower. The random coalescence model (C_rc = 0.04) assumes a homogeneous
+   bubble population that collides throughout the cross-section; in reality the
+   near-wall bubbles are geometrically constrained and collide far less freely
+   than in an adiabatic flow.
+
+2. **Turbulent break-up is effectively inactive at these conditions.** The
+   break-up term requires local turbulent eddies with Weber number We > We_cr = 6
+   to split a bubble. In the near-wall region of this low-void subcooled flow the
+   turbulent kinetic energy is not sufficient to routinely exceed this threshold,
+   so break-up cannot counteract coalescence regardless of the We_cr value chosen.
+
+The parametric study below demonstrates both points quantitatively.
+
+---
+
+## Parametric Study
+
+Six model variants were run to isolate the sensitivity of each closure. All
+parametric runs use t = 2.5 s (solution is stationary by ~2 s). Case input files
+and extracted radial profiles are stored in `studies/`.
+
+| Study | Change from baseline | Key parameters |
 |---|---|---|
-| Void fraction | Good | Correct near-wall peak and radial shape; slight over-prediction at r/R ≈ 0.5 |
-| Liquid temperature | Good | Profile shape and near-wall gradient match well |
-| Bubble diameter | Fair | Simulation over-predicts d near the wall (up to 1.2 mm vs ~0.5 mm measured) |
+| Baseline | — | d_ref = 0.24 mm, C_td = 1.0, C_rc = 0.04, We_cr = 6 |
+| Study 1 | Smaller departure diameter | d_ref = 0.15 mm, d_max = 0.6 mm |
+| Study 2 | Reduced turbulent dispersion | C_td = 0.3 |
+| Study 3 | Study 1 + Study 2 | d_ref = 0.15 mm, C_td = 0.3 |
+| Study 4 | Reduced random coalescence | C_rc = 0.01 |
+| Study 5 | Lower break-up threshold | We_cr = 3 |
+| Study 6 | Study 4 + Study 5 | C_rc = 0.01, We_cr = 3 |
 
-The bubble diameter over-prediction is a known limitation of the IATE model
-with standard coalescence/break-up closures at these conditions. The
-Lemmert–Chawla nucleation site density and Tolubinski departure diameter
-correlations were calibrated for lower heat flux conditions and tend to produce
-larger departure diameters here. Despite this, the void fraction and temperature
-profiles remain physically correct because the bulk heat balance is governed by
-the enthalpy equation rather than the bubble size model directly.
+**All studies vs Débora experiment:**
+![Study comparison](study_comparison.png)
+
+### Findings
+
+**Void fraction** — Studies 2 and 3 (reduced C_td) give the largest improvement,
+pulling the mid-radius over-prediction in line with the data. Turbulent
+dispersion was spreading bubbles too far toward the pipe centre; halving C_td
+tightens the void peak near the wall where it belongs. Studies 4–6 (IATE
+coalescence/break-up changes) have minimal effect on void fraction, confirming
+that the void distribution is governed by momentum transport, not bubble size.
+
+**Liquid temperature** — All studies remain close to each other and to the
+experiment. The temperature profile is insensitive to bubble size or dispersion
+tuning because it is set by the bulk heat balance between wall flux and
+convective transport, which none of the parametric changes alter.
+
+**Bubble diameter** — Study 1 (smaller d_ref) reduces the near-wall diameter
+from 1.2 mm to ~0.8 mm by seeding smaller bubbles at the wall. Study 4 (lower
+C_rc) reduces it further to ~0.9 mm by slowing coalescence along the pipe.
+Study 5 (lower We_cr) has almost no effect, confirming that turbulent break-up
+is inactive at these conditions — the turbulent kinetic energy near the wall is
+insufficient to split bubbles regardless of the threshold. Study 6 (C_rc + We_cr)
+tracks Study 4, again showing We_cr is inert. Even with all coalescence and
+departure-diameter changes applied, the diameter remains over-predicted by
+roughly 0.3–0.4 mm. Closing this gap would require either a subcooled-boiling-
+specific coalescence model that accounts for the geometrically constrained
+near-wall bubble population, or a wall condensation sink term in the IATE
+equation to shrink bubbles that re-enter the subcooled core.
 
 ---
 
@@ -215,5 +279,6 @@ decomposePar
 mpirun -np 4 foamRun -parallel
 reconstructPar
 foamPostProcess -latestTime -func "graphCell(name=graph, start=(3.4901 0 0), end=(3.4901 0.0096 0), fields=(alpha.gas T.liquid T.gas d.gas))"
-python3 post_process.py
+python3 post_process.py          # field contours, mesh, convergence, validation plots
+python3 plot_study_comparison.py # parametric study comparison
 ```

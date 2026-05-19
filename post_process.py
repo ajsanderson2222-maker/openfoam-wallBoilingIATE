@@ -6,6 +6,7 @@ import matplotlib.patches as mpatches
 import re
 
 CASE = '/home/ads-user/openfoam/openfoam-wallBoilingIATE'
+BASELINE = CASE + '/studies/baseline'
 R    = 0.0096   # pipe radius [m]
 L    = 3.5      # pipe length [m]
 NX, NY = 350, 40   # axial, radial cells
@@ -19,8 +20,8 @@ def parse_scalar(path):
     return np.array([float(v) for v in vals[:n]])
 
 # ── cell centres (y varies fastest in OpenFOAM cell ordering for this mesh) ──
-cx = parse_scalar(f'{CASE}/4/Ccx')   # axial
-cy = parse_scalar(f'{CASE}/4/Ccy')   # radial
+cx = parse_scalar(f'{BASELINE}/4/Ccx')   # axial
+cy = parse_scalar(f'{BASELINE}/4/Ccy')   # radial
 
 # Reshape: NX*NY, y-fastest → (NX, NY), then transpose → (NY, NX)
 def reshape2d(arr): return arr.reshape(NX, NY).T   # → (NY=radial, NX=axial)
@@ -37,9 +38,9 @@ ye = edges(yc_1d) * 1000   # mm
 XX, YY = np.meshgrid(xe, ye)
 
 # ── fields ────────────────────────────────────────────────────────────────────
-alpha2d = reshape2d(parse_scalar(f'{CASE}/4/alpha.gas'))
-T2d     = reshape2d(parse_scalar(f'{CASE}/4/T.liquid') - 273.15)
-d2d_raw = reshape2d(parse_scalar(f'{CASE}/4/d.gas') * 1000)
+alpha2d = reshape2d(parse_scalar(f'{BASELINE}/4/alpha.gas'))
+T2d     = reshape2d(parse_scalar(f'{BASELINE}/4/T.liquid') - 273.15)
+d2d_raw = reshape2d(parse_scalar(f'{BASELINE}/4/d.gas') * 1000)
 # Mask bubble diameter where there are essentially no bubbles — avoids
 # spurious colour in the sub-cooled core and near the inlet.
 d2d = np.ma.masked_where(alpha2d < 0.005, d2d_raw)
@@ -66,7 +67,7 @@ for ax, F, title, cmap in zip(axes,
 
 axes[0].legend(fontsize=8, loc='upper left')
 plt.tight_layout()
-plt.savefig(f'{CASE}/field_contours.png', dpi=150)
+plt.savefig(f'{BASELINE}/field_contours.png', dpi=150)
 plt.close()
 print('field_contours.png saved')
 
@@ -81,7 +82,7 @@ ax.set_ylabel('Radial [mm]')
 ax.set_title(f'Mesh — {NX}×{NY} = {NX*NY:,} cells  |  y-grading 0.5 (cells refined toward wall)')
 ax.set_aspect('auto')
 plt.tight_layout()
-plt.savefig(f'{CASE}/mesh.png', dpi=150)
+plt.savefig(f'{BASELINE}/mesh.png', dpi=150)
 plt.close()
 print('mesh.png saved')
 
@@ -127,12 +128,12 @@ ax.axvline(3490.1, color='orange', lw=1.5, ls='--')
 ax.text(3490.1 - 30, Rmm*0.3, 'z=3.49m', fontsize=8, color='darkorange', rotation=90, va='center')
 
 plt.tight_layout()
-plt.savefig(f'{CASE}/bc_diagram.png', dpi=150)
+plt.savefig(f'{BASELINE}/bc_diagram.png', dpi=150)
 plt.close()
 print('bc_diagram.png saved')
 
 # ── convergence ───────────────────────────────────────────────────────────────
-log = open(f'{CASE}/log.foamRun').read()
+log = open(f'{BASELINE}/log.foamRun').read()
 res = {'p_rgh': [], 'h.liquid': [], 'k.liquid': []}
 for line in log.split('\n'):
     for key in res:
@@ -155,12 +156,12 @@ ax.set_title('Solver residuals — wallBoilingIATE')
 ax.legend()
 ax.grid(True, which='both', alpha=0.3)
 plt.tight_layout()
-plt.savefig(f'{CASE}/convergence.png', dpi=150)
+plt.savefig(f'{BASELINE}/convergence.png', dpi=150)
 plt.close()
 print('convergence.png saved')
 
 # ── validation profiles ───────────────────────────────────────────────────────
-profile = np.loadtxt(f'{CASE}/postProcessing/graph/4/line.xy')
+profile = np.loadtxt(f'{BASELINE}/postProcessing/graph/4/line.xy')
 r_sim   = profile[:,0] / R
 alpha_s = profile[:,1]
 T_liq_s = profile[:,2] - 273.15
@@ -190,6 +191,6 @@ axes[2].set_xlabel('Bubble diameter [mm]')
 axes[2].set_title('Bubble diameter'); axes[2].legend(loc='lower right'); axes[2].grid(alpha=0.3)
 
 plt.tight_layout()
-plt.savefig(f'{CASE}/validation_profiles.png', dpi=150)
+plt.savefig(f'{BASELINE}/validation_profiles.png', dpi=150)
 plt.close()
 print('validation_profiles.png saved')
