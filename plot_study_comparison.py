@@ -23,14 +23,17 @@ d_exp   = np.loadtxt(f'{CASE}/validation/exptData/d_deb1.txt')
 
 # ── simulation profiles ────────────────────────────────────────────────────────
 studies = {
-    'Baseline':               f'{CASE}/studies/baseline/profile.xy',
-    'Study 1 — small d_dep':  f'{CASE}/studies/study1/profile.xy',
-    'Study 2 — low C_td':     f'{CASE}/studies/study2/profile.xy',
-    'Study 3 — both':         f'{CASE}/studies/study3/profile.xy',
+    'Baseline':                    f'{CASE}/studies/baseline/profile.xy',
+    'Study 1 — small d_dep':       f'{CASE}/studies/study1/profile.xy',
+    'Study 2 — low C_td':          f'{CASE}/studies/study2/profile.xy',
+    'Study 3 — small d_dep+C_td':  f'{CASE}/studies/study3/profile.xy',
+    'Study 4 — low C_rc':          f'{CASE}/studies/study4/profile.xy',
+    'Study 5 — low We_cr':         f'{CASE}/studies/study5/profile.xy',
+    'Study 6 — low C_rc+We_cr':    f'{CASE}/studies/study6/profile.xy',
 }
 
-colors = ['steelblue', 'darkorange', 'green', 'purple']
-styles = ['-', '--', '-.', ':']
+colors = ['steelblue', 'darkorange', 'green', 'purple', 'crimson', 'teal', 'saddlebrown']
+styles = ['-', '--', '-.', ':', '-', '--', '-.']
 
 fig, axes = plt.subplots(1, 3, figsize=(14, 5))
 fig.suptitle('Parametric study — Débora validation  (z = 3.49 m)', fontsize=13)
