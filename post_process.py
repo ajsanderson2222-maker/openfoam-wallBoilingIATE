@@ -39,7 +39,14 @@ XX, YY = np.meshgrid(xe, ye)
 # ── fields ────────────────────────────────────────────────────────────────────
 alpha2d = reshape2d(parse_scalar(f'{CASE}/4/alpha.gas'))
 T2d     = reshape2d(parse_scalar(f'{CASE}/4/T.liquid') - 273.15)
-d2d     = reshape2d(parse_scalar(f'{CASE}/4/d.gas') * 1000)
+d2d_raw = reshape2d(parse_scalar(f'{CASE}/4/d.gas') * 1000)
+# Mask bubble diameter where there are essentially no bubbles — avoids
+# spurious colour in the sub-cooled core and near the inlet.
+d2d = np.ma.masked_where(alpha2d < 0.005, d2d_raw)
+
+# pcolormesh with gouraud shading interpolates colours between cell centres
+# for a smooth result; requires cell-centre coordinates (not edges).
+XC, YC = np.meshgrid(xc_1d * 1000, yc_1d * 1000)
 
 # ── 2D field contours ─────────────────────────────────────────────────────────
 fig, axes = plt.subplots(1, 3, figsize=(15, 3.5))
@@ -49,7 +56,8 @@ for ax, F, title, cmap in zip(axes,
         [alpha2d, T2d, d2d],
         ['Gas void fraction α_gas', 'Liquid temperature [°C]', 'Bubble diameter d_gas [mm]'],
         ['RdBu_r', 'hot', 'viridis']):
-    im = ax.pcolormesh(XX, YY, F, cmap=cmap, shading='auto')
+    im = ax.pcolormesh(XC, YC, F, cmap=cmap, shading='gouraud')
+    ax.set_xlim(xe[0], xe[-1]); ax.set_ylim(ye[0], ye[-1])
     ax.axvline(3490.1, color='white', lw=1.2, ls='--', label='z = 3.49 m')
     ax.set_xlabel('Axial position [mm]')
     ax.set_ylabel('Radial [mm]')
