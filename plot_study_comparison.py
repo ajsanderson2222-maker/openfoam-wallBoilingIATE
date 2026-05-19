@@ -4,8 +4,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re, os
 
-BASE = '/home/ads-user/openfoam'
-CASE = f'{BASE}/openfoam-wallBoilingIATE'
+CASE = os.path.dirname(os.path.abspath(__file__))
 R    = 0.0096
 
 def load_profile(path):
@@ -24,10 +23,10 @@ d_exp   = np.loadtxt(f'{CASE}/validation/exptData/d_deb1.txt')
 
 # ── simulation profiles ────────────────────────────────────────────────────────
 studies = {
-    'Baseline':          f'{CASE}/postProcessing/graph/4/line.xy',
-    'Study 1 — small d_dep':    f'{BASE}/openfoam-wallBoilingIATE_study1/postProcessing/graph/4/line_study1.xy',
-    'Study 2 — low C_td':       f'{BASE}/openfoam-wallBoilingIATE_study2/postProcessing/graph/2.5/line_study2.xy',
-    'Study 3 — both':           f'{BASE}/openfoam-wallBoilingIATE_study3/postProcessing/graph/2.5/line_study3.xy',
+    'Baseline':               f'{CASE}/studies/baseline/profile.xy',
+    'Study 1 — small d_dep':  f'{CASE}/studies/study1/profile.xy',
+    'Study 2 — low C_td':     f'{CASE}/studies/study2/profile.xy',
+    'Study 3 — both':         f'{CASE}/studies/study3/profile.xy',
 }
 
 colors = ['steelblue', 'darkorange', 'green', 'purple']
