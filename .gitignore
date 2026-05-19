@@ -1,0 +1,9 @@
+[1-9]*/
+0.*/
+postProcessing/
+VTK/
+log.*
+dynamicCode/
+constant/polyMesh/
+processor*/
+cell_centers.npy
